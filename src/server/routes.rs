@@ -8,6 +8,7 @@ use axum::response::IntoResponse;
 use axum::routing::{get, post};
 use axum::{Json, Router};
 use serde::{Deserialize, Serialize};
+use tower_http::services::ServeDir;
 
 use crate::scraping::{SearchQuery, SearchResult};
 
@@ -16,10 +17,10 @@ use super::state::AppState;
 /// Create the API router with all routes.
 pub fn create_router(state: Arc<AppState>) -> Router {
     Router::new()
-        .route("/", get(health_check))
         .route("/health", get(health_check))
         .route("/api/chat", post(chat_completion))
         .route("/api/search", post(web_search))
+        .nest_service("/", ServeDir::new("static").fallback(ServeDir::new("static")))
         .with_state(state)
 }
 

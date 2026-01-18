@@ -4,7 +4,8 @@
       "Bash(cargo check:*)",
       "Bash(cargo clippy:*)",
       "Bash(npm run build:*)",
-      "Bash(cargo doc:*)"
+      "Bash(cargo doc:*)",
+      "Bash(ssh:*)"
     ]
   }
 }
