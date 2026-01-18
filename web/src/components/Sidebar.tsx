@@ -1,5 +1,5 @@
 import { Logo } from './Logo'
-import type { Conversation } from '../types'
+import type { Conversation } from '../types/index'
 import './Sidebar.css'
 
 interface SidebarProps {

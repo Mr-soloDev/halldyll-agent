@@ -5,7 +5,8 @@
 //! This launcher:
 //! 1. Deploys Ollama + server to `RunPod` via SSH
 //! 2. Services continue running even when PC is off
-//! 3. Ctrl+C stops all `RunPod` services
+//! 3. Ctrl+C exits the launcher but KEEPS services running on cloud
+//! 4. Use `cargo run -- --stop` to stop cloud services
 
 use std::io::{BufRead, BufReader};
 use std::process::{Command, ExitCode, Stdio};
@@ -121,6 +122,17 @@ fn wait_for_interrupt(shutdown_flag: &Arc<AtomicBool>) {
 }
 
 fn main() -> ExitCode {
+    let args: Vec<String> = std::env::args().collect();
+
+    // Check for --stop flag
+    if args.iter().any(|a| a == "--stop") {
+        println!();
+        println!("  Stopping cloud services...");
+        cleanup_runpod(&get_ssh_key());
+        println!();
+        return ExitCode::SUCCESS;
+    }
+
     println!();
     println!("  ╔═══════════════════════════════════════════╗");
     println!("  ║     Halldyll Agent - Cloud Launcher       ║");
@@ -135,7 +147,7 @@ fn main() -> ExitCode {
     if let Err(e) = ctrlc::set_handler(move || {
         println!();
         println!("  ─────────────────────────────────────────");
-        println!("  Shutting down...");
+        println!("  Exiting launcher (services keep running on cloud)");
         shutdown_flag_handler.store(true, Ordering::Relaxed);
     }) {
         eprintln!("  Warning: Ctrl+C handler failed: {e}");
@@ -151,7 +163,6 @@ fn main() -> ExitCode {
     }
 
     if shutdown_flag.load(Ordering::Relaxed) {
-        cleanup_runpod(&ssh_key);
         return ExitCode::SUCCESS;
     }
 
@@ -161,16 +172,20 @@ fn main() -> ExitCode {
     println!("  Server running at:");
     println!("  {RUNPOD_URL}");
     println!();
-    println!("  Press Ctrl+C to stop");
+    println!("  Services will keep running on the cloud.");
+    println!("  You can close this terminal safely.");
+    println!();
+    println!("  To stop cloud services: cargo run -- --stop");
     println!("  ═══════════════════════════════════════════");
     println!();
 
-    // Wait for shutdown
+    // Wait for shutdown (optional - user can just close terminal)
     wait_for_interrupt(&shutdown_flag);
 
-    // Cleanup
+    // Don't cleanup - services keep running on cloud
     println!();
-    cleanup_runpod(&ssh_key);
+    println!("  Launcher exited. Cloud services still running.");
+    println!("  Access at: {RUNPOD_URL}");
     println!();
 
     ExitCode::SUCCESS

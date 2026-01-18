@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import type { Message, Conversation } from '../types'
+import type { Message, Conversation } from '../types/index'
 
 const STORAGE_KEY = 'halldyll-conversations'
 

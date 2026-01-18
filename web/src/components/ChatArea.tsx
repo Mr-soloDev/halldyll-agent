@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react'
 import { Logo } from './Logo'
-import type { Message } from '../types'
+import type { Message } from '../types/index'
 import './ChatArea.css'
 
 interface ChatAreaProps {
