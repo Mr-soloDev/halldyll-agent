@@ -20,7 +20,7 @@ pub fn create_router(state: Arc<AppState>) -> Router {
         .route("/health", get(health_check))
         .route("/api/chat", post(chat_completion))
         .route("/api/search", post(web_search))
-        .nest_service("/", ServeDir::new("static").fallback(ServeDir::new("static")))
+        .fallback_service(ServeDir::new("static"))
         .with_state(state)
 }
 
