@@ -1,0 +1,21 @@
+{
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devUrl": "http://localhost:5173",
+    "frontendDist": "../dist"
+  },
+  "productName": "Halldyll",
+  "version": "0.1.0",
+  "identifier": "com.halldyll.desktop",
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Halldyll",
+        "width": 1100,
+        "height": 720
+      }
+    ]
+  }
+}

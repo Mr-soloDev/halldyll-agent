@@ -1,0 +1,38 @@
+memory/
+  core/
+    config.rs
+    errors.rs
+    ids.rs
+    kinds.rs
+    item.rs
+    metadata.rs
+    mod.rs
+
+  ingest/
+    transcript_event.rs
+    transcript_store.rs
+    extractor_heuristic.rs
+    extractor_llm.rs
+    dedupe.rs
+    pruning.rs
+
+  embedding/
+    embedder.rs
+
+  storage/
+    vector_store.rs
+    summary_store.rs
+
+  retrieval/
+    retrieval.rs
+    ranking.rs
+
+  prompt/
+    prompt_budget.rs # pyright: ignore[reportUndefinedVariable]
+    prompt_builder.rs
+
+  engine/
+    engine.rs
+
+  adapters/
+    rig_adapter.rs

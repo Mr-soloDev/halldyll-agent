@@ -1,0 +1,35 @@
+/* App Layout */
+.app-layout {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  background: var(--color-bg);
+}
+
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+}
+
+.app-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Legacy styles kept for compatibility during transition */
+.chatScroll::-webkit-scrollbar {
+  width: 10px;
+}
+
+.chatScroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.10);
+  border-radius: 999px;
+  border: 2px solid rgba(0, 0, 0, 0);
+  background-clip: padding-box;
+}
