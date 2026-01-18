@@ -28,7 +28,7 @@ impl AppState {
             .map_err(|e| format!("Failed to create scraping service: {e}"))?;
 
         let model_name = std::env::var("HALLDYLL_MODEL")
-            .unwrap_or_else(|_| "ministral-3:8b-instruct-2512-q8_0".to_string());
+            .unwrap_or_else(|_| "mistral:7b-instruct-q8_0".to_string());
 
         Ok(Arc::new(Self {
             ollama,
