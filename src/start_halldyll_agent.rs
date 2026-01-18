@@ -1,23 +1,19 @@
-//! Startup helpers that ensure Ollama is running and launches the agent server.
+//! Startup helpers for the Halldyll agent server.
+//!
+//! Cloud-only mode: connects to remote Ollama on `RunPod`.
 
+use std::future::Future;
 use std::process::ExitCode;
+use std::sync::Arc;
 
-use crate::llm::ollama_starter_ministral;
 use crate::server::{self, AppState};
 
-/// Run the startup sequence and return an exit code suitable for a binary entrypoint.
+/// Run the server (used by `halldyll-server` binary on `RunPod`).
 ///
-/// This function:
-/// 1. Initializes logging
-/// 2. Ensures Ollama is running (locally or remotely via `HALLDYLL_OLLAMA_URL`)
-/// 3. Preloads the LLM model
-/// 4. Starts the HTTP API server
-///
-/// Returns `ExitCode::SUCCESS` on graceful shutdown.
-/// Returns `1` on any failure.
+/// # Returns
+/// `ExitCode::SUCCESS` on graceful shutdown, `1` on failure.
 #[must_use]
 pub fn run() -> ExitCode {
-    // Initialize logging
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::from_default_env()
@@ -27,47 +23,68 @@ pub fn run() -> ExitCode {
 
     tracing::info!("Starting Halldyll Agent v{}", env!("CARGO_PKG_VERSION"));
 
-    // Check if we're using remote Ollama
-    let ollama_url = std::env::var("HALLDYLL_OLLAMA_URL").ok();
-    if let Some(ref url) = ollama_url {
-        tracing::info!("Using remote Ollama at: {}", url);
-    } else {
-        tracing::info!("Using local Ollama at: http://127.0.0.1:11434");
-        // Only try to start local Ollama if not using remote
-        if let Err(e) = ollama_starter_ministral::ensure_ollama_and_preload_ministral() {
-            tracing::error!("Failed to start Ollama: {}", e);
-            return ExitCode::from(1);
-        }
-    }
+    let ollama_url = std::env::var("HALLDYLL_OLLAMA_URL")
+        .unwrap_or_else(|_| "http://127.0.0.1:11434".to_string());
+    tracing::info!("Ollama endpoint: {ollama_url}");
 
-    // Create application state
     let state = match AppState::new() {
         Ok(s) => s,
         Err(e) => {
-            tracing::error!("Failed to create application state: {}", e);
+            tracing::error!("Failed to create state: {e}");
             return ExitCode::from(1);
         }
     };
 
-    // Get port from environment or use default
-    let port = std::env::var("HALLDYLL_PORT")
-        .ok()
-        .and_then(|p| p.parse().ok())
-        .unwrap_or(server::DEFAULT_PORT);
+    let port = get_port();
 
-    // Run the async server
     let rt = match tokio::runtime::Runtime::new() {
         Ok(rt) => rt,
         Err(e) => {
-            tracing::error!("Failed to create Tokio runtime: {}", e);
+            tracing::error!("Failed to create runtime: {e}");
             return ExitCode::from(1);
         }
     };
 
     if let Err(e) = rt.block_on(server::run_server(state, port)) {
-        tracing::error!("Server error: {}", e);
+        tracing::error!("Server error: {e}");
         return ExitCode::from(1);
     }
 
     ExitCode::SUCCESS
+}
+
+/// Initialize application state without starting the server.
+///
+/// # Errors
+/// Returns an error if state creation fails.
+pub fn initialize() -> Result<Arc<AppState>, Box<dyn std::error::Error + Send + Sync>> {
+    let ollama_url = std::env::var("HALLDYLL_OLLAMA_URL")
+        .unwrap_or_else(|_| "http://127.0.0.1:11434".to_string());
+    tracing::info!("Ollama endpoint: {ollama_url}");
+
+    AppState::new().map_err(|e| format!("Failed to create state: {e}").into())
+}
+
+/// Run server with graceful shutdown.
+///
+/// # Errors
+/// Returns an error if the server fails.
+pub async fn run_server_with_shutdown<F>(
+    state: Arc<AppState>,
+    port: u16,
+    shutdown_signal: F,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>>
+where
+    F: Future<Output = ()> + Send + 'static,
+{
+    server::run_server_with_shutdown(state, port, shutdown_signal).await
+}
+
+/// Get configured server port.
+#[must_use]
+pub fn get_port() -> u16 {
+    std::env::var("HALLDYLL_PORT")
+        .ok()
+        .and_then(|p| p.parse().ok())
+        .unwrap_or(server::DEFAULT_PORT)
 }
